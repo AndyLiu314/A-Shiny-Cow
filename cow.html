@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cow</title>
+    <link rel="stylesheet" href="style.css">
+    <script id="vertex-shader" type="x-shader/x-vertex">
+    attribute vec2 vPosition;
+    uniform float height;
+    void
+    main()
+    {
+        gl_Position = vec4(vPosition, 0.0, 1.0);
+    }
+    </script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
+    uniform vec4 uColor;
+    void
+    main()
+    {
+        gl_FragColor = uColor;
+    }
+    </script>
+    <script type="text/javascript" src="../Common/webgl-utils.js"></script>
+    <script type="text/javascript" src="../Common/initShaders.js"></script>
+    <script type="text/javascript" src="../Common/MV.js"></script>
+    <script type="text/javascript" src="cow.js"></script>
+</head>
+<body>
+    
+</body>
+</html>

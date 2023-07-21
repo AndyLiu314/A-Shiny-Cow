@@ -1,35 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cow</title>
-    <link rel="stylesheet" href="style.css">
-    <script id="vertex-shader" type="x-shader/x-vertex">
-    attribute vec2 vPosition;
-    uniform float height;
-    void
-    main()
-    {
-        gl_Position = vec4(vPosition, 0.0, 1.0);
-    }
-    </script>
+<!DOCTYPE HTML>
+<html>
 
-    <script id="fragment-shader" type="x-shader/x-fragment">
-    precision mediump float;
-    uniform vec4 uColor;
-    void
-    main()
-    {
-        gl_FragColor = uColor;
-    }
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <title>CMPT 361 Assignment 2</title>
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        attribute vec3 vPosition;
+
+        uniform mat4 transform;
+
+        void main()
+        {
+            gl_Position = transform*vec4(vPosition, 1.0);
+        }
     </script>
-    <script type="text/javascript" src="../Common/webgl-utils.js"></script>
-    <script type="text/javascript" src="../Common/initShaders.js"></script>
-    <script type="text/javascript" src="../Common/MV.js"></script>
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+        uniform vec4 uColor;
+        void
+        main()
+        {
+            gl_FragColor = uColor;
+        }
+    </script>
+    <script type="text/javascript" src="Common/webgl-utils.js"></script>
+    <script type="text/javascript" src="Common/initShaders.js"></script>
+    <script type="text/javascript" src="Common/MV.js"></script>
     <script type="text/javascript" src="cow.js"></script>
 </head>
-<body>
-    
+
+<body oncontextmenu="return false;">
+    <canvas id="gl-canvas" width="1100" height="900">Please use a browser that supports Canvass</canvas>
+    <div style="display: none;">
+        <!-- These sliders are for testing purposes. -->
+        <input type="range" min="-180" max="180" value="0" step="any" id="rotation1">
+        <input type="range" min="-180" max="180" value="0" step="any" id="rotation2">
+        <input type="range" min="0.05" max="0.7" value="0.25" step="any" id="scale1">
+        <input type="range" min="-1" max="1" value="0" step="any" id="trans1">
+        <input type="range" min="-1" max="1" value="0" step="any" id="trans2">
+    </div>
 </body>
+
 </html>

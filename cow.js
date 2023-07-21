@@ -8709,4 +8709,167 @@ function get_faces(){
             vec3(1990,2075,2899),
             vec3(1986,2897,1984)];
 }
-        
+
+var gl;
+var canvas;
+var program;
+var vertices = [];
+var indices = [];
+var cow = [];
+var angle = 0;
+var copy_angle = 0;
+var rotation1 = 0;
+var rotation2;
+var scale_val = 1;
+var trans_x = 0;
+var trans_y = 0;
+var trans_z = 1;
+var p_x = 0;
+var copy_lx = 0;
+var p_y = 0;
+var stop_light_rotating = false;
+var stop_light_panning = false;
+
+const black = vec4(0.0, 0.0, 0.0, 1.0);
+
+window.onload = function init() {
+    canvas = document.getElementById( "gl-canvas" );
+    gl = WebGLUtils.setupWebGL( canvas );
+    	if ( !gl ) { alert( "WebGL isn't available" ); }
+	gl.viewport( 0, 0, canvas.width, canvas.height );
+	gl.clearColor( 0.4, 0.4, 0.4, 1.0 );
+
+    indices = get_faces();
+    vertices = get_vertices();
+    for (var i = 0; i < indices.length; i++) {
+      for (var j = 0; j < 3; j++) {
+        cow.push(vertices[indices[i][j] - 1]);
+      }
+    }
+
+    program = initShaders(gl, "vertex-shader", "fragment-shader");
+    gl.useProgram(program);
+
+    const vBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(cow), gl.STATIC_DRAW);
+  
+    const vertexPosition = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vertexPosition, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vertexPosition);
+
+    render();
+}
+
+// helper function 
+function setUniform3f(program, name, x, y, z) {
+    const position = gl.getUniformLocation(program, name);
+    gl.uniform3f(position, x, y, z);
+}
+
+function render (){
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    //const rotate1 = rotateX(rotation1.value);
+    //const rotate2 = rotateY(rotation2.value);
+    //const s1 = scalem(scale1.value, scale1.value, scale1.value);
+    //const trans = translate(trans1.value, trans2.value, 0);
+  
+    //const mat = mult(trans, mult(s1, mult(rotate2, rotate1)));
+    const mat = [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+    ];
+
+    var transform_loc = gl.getUniformLocation(program, "transform");
+    var model = mat;
+
+    // creates translation matrix
+    // moves cow x y z 
+    var translate_cam = translate(-0.4, -0.5, 0.0); 
+    var scale = scalem(scale_val, scale_val, 0);
+
+    // creates rotation matrix
+    // var angle rotates the matrix
+    // rotation depends on axis which is the second parameter (the array)
+    model = rotate(angle, [1.0, 1.0, 0.0]);
+
+    // this orients camera
+    // eye is camera location
+    // target is reference position (basically cow position)
+    // up is direction of up
+    var eye = vec3(0, 0, 30);
+    var target = vec3(0, 0, 0);
+    var up = vec3(0, 1, 0);
+
+    // create view matrix
+    var view = lookAt(
+        eye,
+        target,
+        up
+    );
+
+    var aspect = canvas.width / canvas.height;
+
+    // perspective(fovy, aspect, near, far)
+    // fovy is prob fov 
+    var projection = perspective(45.0, aspect, 0.1, 1000.0);
+
+    var transform = mult(translate_cam, mult(scale, mult(projection, mult(view, model))));
+    //var transform = mult(projection, mult(view, model));
+
+    gl.uniformMatrix4fv(transform_loc, false, flatten(transform));
+
+	var colorLoc = gl.getUniformLocation(program, "uColor");
+	gl.uniform4fv(colorLoc, black);
+
+    gl.drawArrays(gl.TRIANGLES, 0, cow.length);
+    window.requestAnimationFrame(render);
+}
+
+/*
+    Input Events
+*/
+
+function setEventListeners(canvas) {
+    canvas.addEventListener('keydown', function (event) {
+        //document.getElementById("keydown").innerText = event.key;
+    });
+
+    canvas.addEventListener('keyup', function (event) {
+        //document.getElementById("keyup").innerText = event.key;
+    });
+
+    canvas.addEventListener('mousemove', function (event) {
+        //document.getElementById("mpos_x").innerText = event.x;
+        //document.getElementById("mpos_y").innerText = event.y;
+    });
+}
+
+window.addEventListener("keydown", getKey, false);
+function getKey(key) {
+	if (key.key == "ArrowUp"){
+        if (scale_val < 5) {
+            if (scale_val < 0.5){
+                scale_val += 0.1;
+                //rotation1 += 25;
+            } else {
+                scale_val += 0.25;
+                //rotation1 += 25;
+            }
+        }
+        // console.log(scale_val);
+    } else if (key.key == "ArrowDown"){
+        if (scale_val > 0.00002){
+            if (scale_val <= 0.5) {
+                scale_val -= 0.1;
+                //rotation1 -= 25;
+            } else {
+                scale_val -= 0.25;
+                //rotation1 -= 25;
+            }
+        }
+        // console.log(scale_val);
+	}
+}

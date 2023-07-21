@@ -8717,20 +8717,99 @@ var vertices = [];
 var indices = [];
 var cow = [];
 var angle = 0;
-var copy_angle = 0;
-var rotation1 = 0;
-var rotation2;
+
+//var copy_angle = 0;
+//var rotation1 = 0;
+//var rotation2 = 0;
+
 var scale_val = 1;
 var trans_x = 0;
 var trans_y = 0;
-var trans_z = 1;
-var p_x = 0;
-var copy_lx = 0;
-var p_y = 0;
-var stop_light_rotating = false;
-var stop_light_panning = false;
+var trans_z = 0;
+
+var mpos_x = 0;
+var mpos_y = 0;
+//var copy_lx = 0;
+
+//var stop_light_rotating = false;
+//var stop_light_panning = false;
+
+var modelView, projection, transform;
+var eye, target, up;
 
 const black = vec4(0.0, 0.0, 0.0, 1.0);
+
+/*
+    Input Events
+*/
+
+function setEventListeners(canvas) {
+    const delta = 6;
+    let startX;
+    let startY;
+    let drag = false;
+    canvas.addEventListener('keydown', function (event) {
+        //document.getElementById("keydown").innerText = event.key;
+    });
+
+    canvas.addEventListener('keyup', function (event) {
+        //document.getElementById("keyup").innerText = event.key;
+    });
+
+    canvas.addEventListener('mousedown', function (event) {
+        startX = event.clientX;
+        startY = event.clientY;
+        drag = true;
+    });
+      
+    canvas.addEventListener('mousemove', function (event) {
+        //document.getElementById("mpos_x").innerText = event.x;
+        //document.getElementById("mpos_y").innerText = event.y;
+    });
+
+    canvas.addEventListener('mouseup', function (event) {
+        const diffX = Math.abs(event.clientX - startX);
+        const diffY = Math.abs(event.clientY - startY);
+      
+        if (diffX < delta && diffY < delta) {
+          // Click!
+        } else {
+            trans_x = diffX;
+            trans_y = diffY;
+        }
+    });
+}
+
+window.addEventListener("keydown", getKey, false);
+function getKey(key) {
+	if (key.key == "ArrowUp"){
+        if (trans_z < 25) {
+            trans_z += 2;
+        }
+        // console.log(scale_val);
+    } else if (key.key == "ArrowDown"){
+        if (trans_z > -50){
+            trans_z -= 2.5;
+        } 
+        // console.log(trans_z);
+	} else if (key.key == "r" || key.key == "R" ){
+        resetCow();
+    }
+}
+
+// helper function 
+function setUniform3f(program, name, x, y, z) {
+    const position = gl.getUniformLocation(program, name);
+    gl.uniform3f(position, x, y, z);
+}
+
+function resetCow(){
+    trans_x = 0;
+    trans_y = 0;
+    trans_z = 0;
+
+    angle = 0;
+}
 
 window.onload = function init() {
     canvas = document.getElementById( "gl-canvas" );
@@ -8738,6 +8817,9 @@ window.onload = function init() {
     	if ( !gl ) { alert( "WebGL isn't available" ); }
 	gl.viewport( 0, 0, canvas.width, canvas.height );
 	gl.clearColor( 0.4, 0.4, 0.4, 1.0 );
+
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
 
     indices = get_faces();
     vertices = get_vertices();
@@ -8754,122 +8836,59 @@ window.onload = function init() {
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(cow), gl.STATIC_DRAW);
   
-    const vertexPosition = gl.getAttribLocation(program, "vPosition");
-    gl.vertexAttribPointer(vertexPosition, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vertexPosition);
+    const vPosition = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
+
+    modelView = gl.getUniformLocation( program, "modelView" );
+    projection = gl.getUniformLocation( program, "projection" );
+    transform = gl.getUniformLocation(program, "transform");
 
     render();
 }
 
-// helper function 
-function setUniform3f(program, name, x, y, z) {
-    const position = gl.getUniformLocation(program, name);
-    gl.uniform3f(position, x, y, z);
-}
-
 function render (){
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    //const rotate1 = rotateX(rotation1.value);
-    //const rotate2 = rotateY(rotation2.value);
-    //const s1 = scalem(scale1.value, scale1.value, scale1.value);
-    //const trans = translate(trans1.value, trans2.value, 0);
-  
-    //const mat = mult(trans, mult(s1, mult(rotate2, rotate1)));
-    const mat = [
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    ];
-
-    var transform_loc = gl.getUniformLocation(program, "transform");
-    var model = mat;
-
-    // creates translation matrix
-    // moves cow x y z 
-    var translate_cam = translate(-0.4, -0.5, 0.0); 
-    var scale = scalem(scale_val, scale_val, 0);
 
     // creates rotation matrix
     // var angle rotates the matrix
     // rotation depends on axis which is the second parameter (the array)
-    model = rotate(angle, [1.0, 1.0, 0.0]);
+    angle = 0;
+    var rotate_mat = rotate(angle, [0.0, 1.0, 0.0]);
+
+    // creates translation matrix
+    // moves cow x y z 
+    var translate_mat = translate(-5.0 + trans_x, -5.0 + trans_y, trans_z); 
+
+    // scale matrix
+    var scale_mat = scalem(scale_val, scale_val, scale_val);
+
+    // final transformation matrix 
+    var transform_mat = mult(translate_mat, mult(scale_mat, rotate_mat));
 
     // this orients camera
     // eye is camera location
     // target is reference position (basically cow position)
     // up is direction of up
-    var eye = vec3(0, 0, 30);
-    var target = vec3(0, 0, 0);
-    var up = vec3(0, 1, 0);
+    eye = vec3(0, 0, 30);
+    target = vec3(0, 0, 0);
+    up = vec3(0, 1, 0);
 
     // create view matrix
-    var view = lookAt(
-        eye,
-        target,
-        up
-    );
-
-    var aspect = canvas.width / canvas.height;
+    var view = lookAt(eye, target, up);
 
     // perspective(fovy, aspect, near, far)
     // fovy is prob fov 
-    var projection = perspective(45.0, aspect, 0.1, 1000.0);
+    var aspect = canvas.width / canvas.height;
+    var projection_mat = perspective(45.0, aspect, 0.1, 1000.0);
 
-    var transform = mult(translate_cam, mult(scale, mult(projection, mult(view, model))));
-    //var transform = mult(projection, mult(view, model));
-
-    gl.uniformMatrix4fv(transform_loc, false, flatten(transform));
+    gl.uniformMatrix4fv(transform, false, flatten(transform_mat));
+    gl.uniformMatrix4fv(modelView, false, flatten(view));
+    gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );
 
 	var colorLoc = gl.getUniformLocation(program, "uColor");
 	gl.uniform4fv(colorLoc, black);
 
     gl.drawArrays(gl.TRIANGLES, 0, cow.length);
     window.requestAnimationFrame(render);
-}
-
-/*
-    Input Events
-*/
-
-function setEventListeners(canvas) {
-    canvas.addEventListener('keydown', function (event) {
-        //document.getElementById("keydown").innerText = event.key;
-    });
-
-    canvas.addEventListener('keyup', function (event) {
-        //document.getElementById("keyup").innerText = event.key;
-    });
-
-    canvas.addEventListener('mousemove', function (event) {
-        //document.getElementById("mpos_x").innerText = event.x;
-        //document.getElementById("mpos_y").innerText = event.y;
-    });
-}
-
-window.addEventListener("keydown", getKey, false);
-function getKey(key) {
-	if (key.key == "ArrowUp"){
-        if (scale_val < 5) {
-            if (scale_val < 0.5){
-                scale_val += 0.1;
-                //rotation1 += 25;
-            } else {
-                scale_val += 0.25;
-                //rotation1 += 25;
-            }
-        }
-        // console.log(scale_val);
-    } else if (key.key == "ArrowDown"){
-        if (scale_val > 0.00002){
-            if (scale_val <= 0.5) {
-                scale_val -= 0.1;
-                //rotation1 -= 25;
-            } else {
-                scale_val -= 0.25;
-                //rotation1 -= 25;
-            }
-        }
-        // console.log(scale_val);
-	}
 }

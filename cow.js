@@ -8716,7 +8716,6 @@ var program;
 var vertices = [];
 var indices = [];
 var cow = [];
-var angle = 0;
 var angleX = 0;
 var angleY = 0;
 var angleZ = 0;
@@ -8778,7 +8777,7 @@ function setEventListeners(canvas) {
             let distY = currentY - startY;
             trans_x = distX*0.05;
             trans_y = -(distY*0.05);
-            
+
         } else if (rightDrag){
             let currentX = event.clientX;
             let currentY = event.clientY;
@@ -8826,7 +8825,9 @@ function resetCow(){
     trans_y = 0;
     trans_z = 0;
 
-    angle = 0;
+    angleX = 0;
+    angleY = 0;
+    angleZ = 0;
 }
 
 window.onload = function init() {
@@ -8871,15 +8872,12 @@ function render (){
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // creates rotation matrix
-    // var angle rotates the matrix
+    // var angleXYZ rotates the matrix
     // rotation depends on axis which is the second parameter (the array)
     let rotateX = rotate(angleX, [1.0, 0.0, 0.0]);
     let rotateY = rotate(angleY, [0.0, 1.0, 0.0]);
     let rotateZ = rotate(angleZ, [0.0, 0.0, 1.0]);
     var rotate_mat = mult(rotateZ, mult(rotateY, rotateX)); 
-
-    //angle = 0;
-    //var rotate_mat = rotate(angle, [0.0, 1.0, 0.0]);
 
     // creates translation matrix
     // moves cow x y z 

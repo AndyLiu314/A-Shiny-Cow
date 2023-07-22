@@ -8717,6 +8717,9 @@ var vertices = [];
 var indices = [];
 var cow = [];
 var angle = 0;
+var angleX = 0;
+var angleY = 0;
+var angleZ = 0;
 
 //var copy_angle = 0;
 //var rotation1 = 0;
@@ -8726,9 +8729,13 @@ var scale_val = 1;
 var trans_x = 0;
 var trans_y = 0;
 var trans_z = 0;
+/* MIGHT BE NEEDED TO IMPROVE TRANSLATION BUT NOT NECESSARY
+var pos_x = 0; 
+var pos_y = 0; 
+var pos_z = 0; */
 
-var mpos_x = 0;
-var mpos_y = 0;
+//var mpos_x = 0;
+//var mpos_y = 0;
 //var copy_lx = 0;
 
 //var stop_light_rotating = false;
@@ -8747,35 +8754,46 @@ function setEventListeners(canvas) {
     const delta = 6;
     let startX;
     let startY;
-    let drag = false;
-    canvas.addEventListener('keydown', function (event) {
-        //document.getElementById("keydown").innerText = event.key;
-    });
-
-    canvas.addEventListener('keyup', function (event) {
-        //document.getElementById("keyup").innerText = event.key;
-    });
-
-    canvas.addEventListener('mousedown', function (event) {
-        startX = event.clientX;
-        startY = event.clientY;
-        drag = true;
+    let leftDrag = false;
+    let rightDrag = false;
+    window.addEventListener('mousedown', function (event) {
+        if (event.button == 0 && rightDrag == false){ // left click
+            leftDrag = true;
+            startX = event.clientX;
+            startY = event.clientY;
+            // console.log(startX);
+            // console.log(startY);
+        } else if (event.button == 2 && leftDrag == false){ // right click
+            rightDrag = true;
+            startX = event.clientX;
+            startY = event.clientY;
+        }
     });
       
-    canvas.addEventListener('mousemove', function (event) {
-        //document.getElementById("mpos_x").innerText = event.x;
-        //document.getElementById("mpos_y").innerText = event.y;
+    window.addEventListener('mousemove', function (event) {
+        if (leftDrag) {
+            let currentX = event.clientX;
+            let currentY = event.clientY;
+            let distX = currentX - startX;
+            let distY = currentY - startY;
+            trans_x = distX*0.05;
+            trans_y = -(distY*0.05);
+            
+        } else if (rightDrag){
+            let currentX = event.clientX;
+            let currentY = event.clientY;
+            let distX = currentX - startX;
+            let distY = currentY - startY;
+            angleX = -(distY*0.25);
+            angleY = -(distX*0.25);
+        }
     });
 
-    canvas.addEventListener('mouseup', function (event) {
-        const diffX = Math.abs(event.clientX - startX);
-        const diffY = Math.abs(event.clientY - startY);
-      
-        if (diffX < delta && diffY < delta) {
-          // Click!
-        } else {
-            trans_x = diffX;
-            trans_y = diffY;
+    window.addEventListener('mouseup', function (event) {
+        if (event.button == 0){ // left click
+            leftDrag = false;
+        } else if (event.button == 2) { // right click
+            rightDrag = false;
         }
     });
 }
@@ -8821,6 +8839,8 @@ window.onload = function init() {
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
 
+    setEventListeners(canvas);
+
     indices = get_faces();
     vertices = get_vertices();
     for (var i = 0; i < indices.length; i++) {
@@ -8853,8 +8873,13 @@ function render (){
     // creates rotation matrix
     // var angle rotates the matrix
     // rotation depends on axis which is the second parameter (the array)
-    angle = 0;
-    var rotate_mat = rotate(angle, [0.0, 1.0, 0.0]);
+    let rotateX = rotate(angleX, [1.0, 0.0, 0.0]);
+    let rotateY = rotate(angleY, [0.0, 1.0, 0.0]);
+    let rotateZ = rotate(angleZ, [0.0, 0.0, 1.0]);
+    var rotate_mat = mult(rotateZ, mult(rotateY, rotateX)); 
+
+    //angle = 0;
+    //var rotate_mat = rotate(angle, [0.0, 1.0, 0.0]);
 
     // creates translation matrix
     // moves cow x y z 

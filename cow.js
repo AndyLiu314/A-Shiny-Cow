@@ -8719,23 +8719,12 @@ var cow = [];
 var angleX = 0;
 var angleY = 0;
 var angleZ = 0;
-
-//var copy_angle = 0;
-//var rotation1 = 0;
-//var rotation2 = 0;
-
 var scale_val = 1;
 var trans_x = 0;
 var trans_y = 0;
 var trans_z = 0;
-/* MIGHT BE NEEDED TO IMPROVE TRANSLATION BUT NOT NECESSARY
 var pos_x = 0; 
 var pos_y = 0; 
-var pos_z = 0; */
-
-//var mpos_x = 0;
-//var mpos_y = 0;
-//var copy_lx = 0;
 
 //var stop_light_rotating = false;
 //var stop_light_panning = false;
@@ -8750,7 +8739,6 @@ const black = vec4(0.0, 0.0, 0.0, 1.0);
 */
 
 function setEventListeners(canvas) {
-    const delta = 6;
     let startX;
     let startY;
     let leftDrag = false;
@@ -8769,14 +8757,20 @@ function setEventListeners(canvas) {
         }
     });
       
-    window.addEventListener('mousemove', function (event) {
+    canvas.addEventListener('mousemove', function (event) {
         if (leftDrag) {
+            // get mouse position with respect to canvas 
             let currentX = event.clientX;
             let currentY = event.clientY;
-            let distX = currentX - startX;
-            let distY = currentY - startY;
-            trans_x = distX*0.05;
-            trans_y = -(distY*0.05);
+            pos_x = (2 * currentX) / canvas.width - 1;
+            pos_y = (2 * (canvas.height - currentY)) / canvas.height - 1;
+            trans_x = pos_x*15;
+            trans_y = pos_y*15;
+
+            //let distX = currentX - startX;
+            //let distY = currentY - startY;
+            //trans_x = distX*0.05;
+            //trans_y = -(distY*0.05);
 
         } else if (rightDrag){
             let currentX = event.clientX;
@@ -8809,9 +8803,13 @@ function getKey(key) {
             trans_z -= 2.5;
         } 
         // console.log(trans_z);
-	} else if (key.key == "r" || key.key == "R" ){
+	} else if (key.key == "ArrowLeft"){
+        angleZ += 10; 
+    } else if (key.key == "ArrowRight"){
+        angleZ -= 10;
+    } else if (key.key == "r" || key.key == "R" ){
         resetCow();
-    }
+    } 
 }
 
 // helper function 
@@ -8881,7 +8879,7 @@ function render (){
 
     // creates translation matrix
     // moves cow x y z 
-    var translate_mat = translate(-5.0 + trans_x, -5.0 + trans_y, trans_z); 
+    var translate_mat = translate(trans_x, trans_y, trans_z); 
 
     // scale matrix
     var scale_mat = scalem(scale_val, scale_val, scale_val);
@@ -8903,7 +8901,7 @@ function render (){
     // perspective(fovy, aspect, near, far)
     // fovy is prob fov 
     var aspect = canvas.width / canvas.height;
-    var projection_mat = perspective(45.0, aspect, 0.1, 1000.0);
+    var projection_mat = perspective(55.0, aspect, 0.1, 1000.0);
 
     gl.uniformMatrix4fv(transform, false, flatten(transform_mat));
     gl.uniformMatrix4fv(modelView, false, flatten(view));

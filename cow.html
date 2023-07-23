@@ -37,7 +37,7 @@
 
     <script id="fragment-shader" type="x-shader/x-fragment">
         precision mediump float;
-
+        vec4 uColor;
         uniform vec4 ambientProduct;
         uniform vec4 diffuseProduct;
         uniform vec4 specularProduct;
@@ -46,7 +46,6 @@
 
         void main()
         {
-            vec4 uColor;
             
             vec3 H = normalize( L + E );
             vec4 ambient = ambientProduct;

@@ -8710,6 +8710,36 @@ function get_faces(){
             vec3(1986,2897,1984)];
 }
 
+function get_cube_vertices() {
+    return [
+        vec3( -0.5, -0.5,  0.5),
+        vec3( -0.5,  0.5,  0.5),
+        vec3(  0.5,  0.5,  0.5),
+        vec3(  0.5, -0.5,  0.5),
+        vec3( -0.5, -0.5, -0.5),
+        vec3( -0.5,  0.5, -0.5),
+        vec3(  0.5,  0.5, -0.5),
+        vec3(  0.5, -0.5, -0.5)
+    ]
+}
+
+function get_cube_faces() {
+    return [
+        vec2(0,1),
+        vec2(1,2),
+        vec2(2,3),
+        vec2(3,0),
+        vec2(4,5),
+        vec2(5,6),
+        vec2(6,7),
+        vec2(7,4),
+        vec2(0,4),
+        vec2(1,5),
+        vec2(2,6),
+        vec2(3,7)
+    ]
+}
+
 var gl;
 var canvas;
 var program;
@@ -8717,6 +8747,10 @@ var program;
 var vertices = [];
 var indices = [];
 var cow = [];
+
+var cube_vertices = [];
+var cube_indices = [];
+var cube = [];
 //var normalsArray = [];
 
 var angleX = 0;
@@ -8729,6 +8763,9 @@ var trans_z = 0;
 var pos_x = 0; 
 var pos_y = 0; 
 
+const rotationSpeedConstant = 10;
+var lightX = 0;
+var lightZ = 0;
 var lightPosition = vec4(8.0, 5.0, 5.0, 0.0 );
 var lightAmbient = vec4(0.0, 0.0, 0.0, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -8841,6 +8878,30 @@ function resetCow(){
     angleZ = 0;
 }
 
+function drawWireframe (vertices, color){
+    let wBuffer = gl.createBuffer();
+    if (!wBuffer) {
+		console.log('Failed to create the buffer object');
+		return -1;
+	}
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, wBuffer);
+	gl.bufferData( gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW ); 
+
+	let wPosition = gl.getAttribLocation( program, "vPosition" );
+	if (wPosition < 0) {
+		console.log('Failed to get the storage location of vPosition');
+		return -1;
+	}
+    gl.vertexAttribPointer( wPosition, 3, gl.FLOAT, false, 0, 0 );
+	gl.enableVertexAttribArray( wPosition );   
+
+    let colorLoc = gl.getUniformLocation(program, "uColor");
+	gl.uniform4fv(colorLoc, color);
+
+    gl.drawArrays(gl.LINES, 0, vertices.length);
+}
+
 window.onload = function init() {
     canvas = document.getElementById( "gl-canvas" );
     gl = WebGLUtils.setupWebGL( canvas );
@@ -8858,6 +8919,14 @@ window.onload = function init() {
     for (var i = 0; i < indices.length; i++) {
       for (var j = 0; j < 3; j++) {
         cow.push(vertices[indices[i][j] - 1]);
+      }
+    }
+
+    cube_indices = get_cube_faces();
+    cube_vertices = get_cube_vertices();
+    for (var l = 0; l < cube_indices.length; l++) {
+      for (var m = 0; m < 2; m++) {
+        cube.push(cube_vertices[cube_indices[l][m]]);
       }
     }
 
@@ -8894,7 +8963,7 @@ window.onload = function init() {
     gl.uniform4fv( gl.getUniformLocation(program, "ambientProduct"),flatten(ambientProduct) );
     gl.uniform4fv( gl.getUniformLocation(program, "diffuseProduct"),flatten(diffuseProduct) );
     gl.uniform4fv( gl.getUniformLocation(program, "specularProduct"),flatten(specularProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program, "lightPosition"),flatten(lightPosition) );
+    // light position used to be here
     gl.uniform1f( gl.getUniformLocation(program, "shininess"),materialShininess );
 
     render();
@@ -8956,9 +9025,15 @@ function render (){
     gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );
     gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
 
-	var colorLoc = gl.getUniformLocation(program, "uColor");
-	gl.uniform4fv(colorLoc, black);
+    /*let angle = 0;
+    angle += 0.1;
+    lightX = Math.cos((Math.PI * rotationSpeedConstant) / 180.0);
+    lightZ = Math.cos((Math.PI * rotationSpeedConstant) / 180.0);
+    var translate_light = translate(lightX, 0.0, lightZ);
+    var transform_light = mult(lightPosition, translate_light); */ 
+    gl.uniform4fv( gl.getUniformLocation(program, "lightPosition"),flatten(lightPosition) );
 
     gl.drawArrays(gl.TRIANGLES, 0, cow.length);
+    //drawWireframe(cube, vec4(1,1,1,1));
     window.requestAnimationFrame(render);
 }

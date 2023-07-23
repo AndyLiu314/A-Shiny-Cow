@@ -8713,9 +8713,12 @@ function get_faces(){
 var gl;
 var canvas;
 var program;
+
 var vertices = [];
 var indices = [];
 var cow = [];
+//var normalsArray = [];
+
 var angleX = 0;
 var angleY = 0;
 var angleZ = 0;
@@ -8726,10 +8729,21 @@ var trans_z = 0;
 var pos_x = 0; 
 var pos_y = 0; 
 
+var lightPosition = vec4(8.0, 5.0, 5.0, 0.0 );
+var lightAmbient = vec4(0.0, 0.0, 0.0, 1.0 );
+var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+
+var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
+var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
+var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+var materialShininess = 20.0;
+
 //var stop_light_rotating = false;
 //var stop_light_panning = false;
 
 var modelView, projection, transform;
+var normalMatrix, normalMatrixLoc;
 var eye, target, up;
 
 const black = vec4(0.0, 0.0, 0.0, 1.0);
@@ -8797,7 +8811,6 @@ function getKey(key) {
         if (trans_z < 25) {
             trans_z += 2;
         }
-        // console.log(scale_val);
     } else if (key.key == "ArrowDown"){
         if (trans_z > -50){
             trans_z -= 2.5;
@@ -8851,23 +8864,55 @@ window.onload = function init() {
     program = initShaders(gl, "vertex-shader", "fragment-shader");
     gl.useProgram(program);
 
-    const vBuffer = gl.createBuffer();
+    var ambientProduct = mult(lightAmbient, materialAmbient);
+    var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    var specularProduct = mult(lightSpecular, materialSpecular);
+
+    /* MIGHT NEED 2 BUFFERS BUT NOT SURE, WILL USE 1 FOR NOW
+       ALSO DONT KNOW DIFFERENCE BETWEEN NORMALS ARRAY AND VERTICES ARRAY (COW) 
+    var nBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW ); */ 
+
+    var vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(cow), gl.STATIC_DRAW);
-  
-    const vPosition = gl.getAttribLocation(program, "vPosition");
+
+    var vNormal = gl.getAttribLocation( program, "vNormal" );
+    gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vNormal);
+
+    var vPosition = gl.getAttribLocation(program, "vPosition");
     gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
     modelView = gl.getUniformLocation( program, "modelView" );
     projection = gl.getUniformLocation( program, "projection" );
     transform = gl.getUniformLocation(program, "transform");
+    normalMatrixLoc = gl.getUniformLocation( program, "normalMatrix" );
+
+    gl.uniform4fv( gl.getUniformLocation(program, "ambientProduct"),flatten(ambientProduct) );
+    gl.uniform4fv( gl.getUniformLocation(program, "diffuseProduct"),flatten(diffuseProduct) );
+    gl.uniform4fv( gl.getUniformLocation(program, "specularProduct"),flatten(specularProduct) );
+    gl.uniform4fv( gl.getUniformLocation(program, "lightPosition"),flatten(lightPosition) );
+    gl.uniform1f( gl.getUniformLocation(program, "shininess"),materialShininess );
 
     render();
 }
 
 function render (){
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    const model = [
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+    ];
+
+    // scale matrix
+    var scale_mat = model;
+    scale_mat = scalem(scale_val, scale_val, scale_val);
 
     // creates rotation matrix
     // var angleXYZ rotates the matrix
@@ -8880,9 +8925,6 @@ function render (){
     // creates translation matrix
     // moves cow x y z 
     var translate_mat = translate(trans_x, trans_y, trans_z); 
-
-    // scale matrix
-    var scale_mat = scalem(scale_val, scale_val, scale_val);
 
     // final transformation matrix 
     var transform_mat = mult(translate_mat, mult(scale_mat, rotate_mat));
@@ -8903,9 +8945,16 @@ function render (){
     var aspect = canvas.width / canvas.height;
     var projection_mat = perspective(55.0, aspect, 0.1, 1000.0);
 
+    normalMatrix = [
+        vec3(view[0][0], view[0][1], view[0][2]),
+        vec3(view[1][0], view[1][1], view[1][2]),
+        vec3(view[2][0], view[2][1], view[2][2])
+    ];
+
     gl.uniformMatrix4fv(transform, false, flatten(transform_mat));
     gl.uniformMatrix4fv(modelView, false, flatten(view));
     gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );
+    gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
 
 	var colorLoc = gl.getUniformLocation(program, "uColor");
 	gl.uniform4fv(colorLoc, black);

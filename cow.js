@@ -8764,8 +8764,8 @@ var pos_x = 0;
 var pos_y = 0; 
 
 var angle = 0;
-var lightRadius = 15.0;
-var rotationSpeed = -0.02;
+var lightRadius = 10.0;
+var rotationSpeed = -0.01;
 var isRotating = true;
 var lightPosition = vec4(8.0, 5.0, 5.0, 0.0 );
 var lightAmbient = vec4(0.0, 0.0, 0.0, 1.0 );
@@ -8775,11 +8775,9 @@ var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
 var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
 var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
-var materialShininess = 80.0;
+var materialShininess = 500.0;
 
-//var stop_light_rotating = false;
-//var stop_light_panning = false;
-
+var cow_vBuffer, cube_vBuffer;
 var modelView, projection, transform;
 var normalMatrix, normalMatrixLoc;
 var eye, target, up;
@@ -8789,7 +8787,6 @@ const black = vec4(0.0, 0.0, 0.0, 1.0);
 /*
     Input Events
 */
-
 function setEventListeners(canvas) {
     let startX;
     let startY;
@@ -8819,17 +8816,12 @@ function setEventListeners(canvas) {
             trans_x = pos_x*15;
             trans_y = pos_y*15;
 
-            //let distX = currentX - startX;
-            //let distY = currentY - startY;
-            //trans_x = distX*0.05;
-            //trans_y = -(distY*0.05);
-
         } else if (rightDrag){
             let currentX = event.clientX;
             let currentY = event.clientY;
             let distX = currentX - startX;
             let distY = currentY - startY;
-            angleX = -(distY*0.25);
+            angleX = (distY*0.25);
             angleY = -(distX*0.25);
         }
     });
@@ -8865,34 +8857,10 @@ function getKey(key) {
             rotationSpeed = 0;
             isRotating = false;
         } else {
-            rotationSpeed = -0.02;
+            rotationSpeed = -0.01;
             isRotating = true;
         }
     }
-}
-
-function drawWireframe (vertices, color){
-    let wBuffer = gl.createBuffer();
-    if (!wBuffer) {
-		console.log('Failed to create the buffer object');
-		return -1;
-	}
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, wBuffer);
-	gl.bufferData( gl.ARRAY_BUFFER, flatten(vertices), gl.STATIC_DRAW ); 
-
-	let wPosition = gl.getAttribLocation( program, "vPosition" );
-	if (wPosition < 0) {
-		console.log('Failed to get the storage location of vPosition');
-		return -1;
-	}
-    gl.vertexAttribPointer( wPosition, 3, gl.FLOAT, false, 0, 0 );
-	gl.enableVertexAttribArray( wPosition );   
-
-    let colorLoc = gl.getUniformLocation(program, "uColor");
-	gl.uniform4fv(colorLoc, color);
-
-    gl.drawArrays(gl.LINES, 0, vertices.length);
 }
 
 function resetCow(){
@@ -8959,6 +8927,17 @@ function viewMatrix() {
     return lookAt(eye, target, up);
 }
 
+function setLightUniforms(){
+    var ambientProduct = mult(lightAmbient, materialAmbient);
+    var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    var specularProduct = mult(lightSpecular, materialSpecular);
+
+    gl.uniform4fv( gl.getUniformLocation(program, "ambientProduct"),flatten(ambientProduct) );
+    gl.uniform4fv( gl.getUniformLocation(program, "diffuseProduct"),flatten(diffuseProduct) );
+    gl.uniform4fv( gl.getUniformLocation(program, "specularProduct"),flatten(specularProduct) );
+    gl.uniform1f( gl.getUniformLocation(program, "shininess"), materialShininess );
+}
+
 window.onload = function init() {
     canvas = document.getElementById( "gl-canvas" );
     gl = WebGLUtils.setupWebGL( canvas );
@@ -8969,7 +8948,22 @@ window.onload = function init() {
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
 
+    program = initShaders(gl, "vertex-shader", "fragment-shader");
+    gl.useProgram(program);
+
     setEventListeners(canvas);
+
+    cube_indices = get_cube_faces();
+    cube_vertices = get_cube_vertices();
+    for (var l = 0; l < cube_indices.length; l++) {
+      for (var m = 0; m < 2; m++) {
+        cube.push(cube_vertices[cube_indices[l][m]]);
+      }
+    } 
+
+    cube_vBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cube_vBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(cube), gl.STATIC_DRAW);
 
     indices = get_faces();
     vertices = get_vertices();
@@ -8979,20 +8973,9 @@ window.onload = function init() {
       }
     }
 
-    cube_indices = get_cube_faces();
-    cube_vertices = get_cube_vertices();
-    for (var l = 0; l < cube_indices.length; l++) {
-      for (var m = 0; m < 2; m++) {
-        cube.push(cube_vertices[cube_indices[l][m]]);
-      }
-    }
-
-    program = initShaders(gl, "vertex-shader", "fragment-shader");
-    gl.useProgram(program);
-
-    var ambientProduct = mult(lightAmbient, materialAmbient);
-    var diffuseProduct = mult(lightDiffuse, materialDiffuse);
-    var specularProduct = mult(lightSpecular, materialSpecular);
+    cow_vBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cow_vBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(cow), gl.STATIC_DRAW);
 
     /* MIGHT NEED 2 BUFFERS BUT NOT SURE, WILL USE 1 FOR NOW
        ALSO DONT KNOW DIFFERENCE BETWEEN NORMALS ARRAY AND VERTICES ARRAY (COW) 
@@ -9000,28 +8983,10 @@ window.onload = function init() {
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW ); */ 
 
-    var vBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(cow), gl.STATIC_DRAW);
-
-    var vNormal = gl.getAttribLocation( program, "vNormal" );
-    gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vNormal);
-
-    var vPosition = gl.getAttribLocation(program, "vPosition");
-    gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vPosition);
-
     modelView = gl.getUniformLocation( program, "modelView" );
     projection = gl.getUniformLocation( program, "projection" );
     transform = gl.getUniformLocation(program, "transform");
     normalMatrixLoc = gl.getUniformLocation( program, "normalMatrix" );
-
-    gl.uniform4fv( gl.getUniformLocation(program, "ambientProduct"),flatten(ambientProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program, "diffuseProduct"),flatten(diffuseProduct) );
-    gl.uniform4fv( gl.getUniformLocation(program, "specularProduct"),flatten(specularProduct) );
-    // light position used to be here
-    gl.uniform1f( gl.getUniformLocation(program, "shininess"),materialShininess );
 
     render();
 }
@@ -9031,12 +8996,8 @@ function render (){
 
     // final transformation matrix 
     var transform_mat = transformCow();
-
     // create view matrix
     var view = viewMatrix();
-
-    // perspective(fovy, aspect, near, far)
-    // fovy is prob fov 
     // projection matrix
     var aspect = canvas.width / canvas.height;
     var projection_mat = perspective(55.0, aspect, 0.1, 1000.0);
@@ -9047,15 +9008,45 @@ function render (){
         vec3(view[2][0], view[2][1], view[2][2])
     ];
 
+    gl.bindBuffer(gl.ARRAY_BUFFER, cow_vBuffer);
+
+    var vPosition = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
+
+    var vNormal = gl.getAttribLocation( program, "vNormal" );
+    gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vNormal);
+
     gl.uniformMatrix4fv(transform, false, flatten(transform_mat));
     gl.uniformMatrix4fv(modelView, false, flatten(view));
     gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );
     gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
 
+    setLightUniforms();
     updateLightPosition();
     gl.uniform4fv( gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
 
     gl.drawArrays(gl.TRIANGLES, 0, cow.length);
-    //drawWireframe(cube, vec4(1,1,1,1));
+
+    // Drawing Cube
+    gl.bindBuffer(gl.ARRAY_BUFFER, cube_vBuffer);
+
+    gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
+    gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vNormal);
+
+    var cube_transform = translate(lightPosition[0], 5, lightPosition[2]);
+    gl.uniformMatrix4fv(transform, false, flatten(cube_transform));
+    gl.uniformMatrix4fv(modelView, false, flatten(view));
+    gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );
+    gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
+
+    gl.uniform4fv( gl.getUniformLocation(program, "ambientProduct"), mat4());
+    gl.uniform4fv( gl.getUniformLocation(program, "diffuseProduct"), mat4());
+    gl.uniform4fv( gl.getUniformLocation(program, "specularProduct"), mat4());
+    gl.drawArrays(gl.LINES, 0, cube.length);
+
     window.requestAnimationFrame(render);
 }

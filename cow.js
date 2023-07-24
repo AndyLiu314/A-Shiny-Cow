@@ -8768,6 +8768,15 @@ var lightRadius = 10.0;
 var rotationSpeed = -0.01;
 var isRotating = true;
 var lightPosition = vec4(8.0, 5.0, 5.0, 0.0 );
+
+var angularAttenuation = 1;
+var spotlightPosition = vec4(0.0, 6.0, 6.0, 1.0);
+var spotlightDirection = vec3(0.0, -1.0, -1.0);
+var cutoffAngle = 30.0;
+var isPanning = true; // Turn panning on by default
+var currentAngle = 0.0;
+var spotlightSpeed = 0.02;
+
 var lightAmbient = vec4(0.0, 0.0, 0.0, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -8775,7 +8784,7 @@ var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
 var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
 var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
-var materialShininess = 500.0;
+var materialShininess = 200.0;
 
 var cow_vBuffer, cube_vBuffer;
 var modelView, projection, transform;
@@ -8927,6 +8936,20 @@ function updateLightPosition() {
     angle += rotationSpeed;
 }
 
+function updateSpotlightPosition() {
+    if (panning) {
+      // Update the light's position based on the current angle
+      lightPosition[0] = 6.0 * Math.sin(currentAngle);
+      lightPosition[2] = 6.0 * Math.cos(currentAngle);
+      
+      // Update the light's direction as well (pointing towards the origin)
+      lightDirection = vec3(-lightPosition[0], -lightPosition[1], -lightPosition[2]);
+      
+      // Update the angle for the next frame
+      currentAngle += rotationSpeed;
+    }
+  }
+
 function setLightUniforms(){
     var ambientProduct = mult(lightAmbient, materialAmbient);
     var diffuseProduct = mult(lightDiffuse, materialDiffuse);
@@ -9034,15 +9057,15 @@ function render (){
 
     gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
-    gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vNormal);
+    //gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
+    //gl.enableVertexAttribArray( vNormal);
 
     var cube_transform = mult(translate(lightPosition[0], 5, lightPosition[2]), transform_mat); // this attaches cube to cow
     //var cube_transform = translate(lightPosition[0], 5, lightPosition[2]) // cube is detached
     gl.uniformMatrix4fv(transform, false, flatten(cube_transform));
-    gl.uniformMatrix4fv(modelView, false, flatten(view));
-    gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );
-    gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
+    //gl.uniformMatrix4fv(modelView, false, flatten(view));
+    //gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );
+    //gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
 
     gl.uniform4fv( gl.getUniformLocation(program, "ambientProduct"), mat4());
     gl.uniform4fv( gl.getUniformLocation(program, "diffuseProduct"), mat4());

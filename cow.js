@@ -8765,7 +8765,8 @@ var pos_y = 0;
 
 var angle = 0;
 var lightRadius = 15.0;
-const rotationSpeed = -0.02;
+var rotationSpeed = -0.02;
+var isRotating = true;
 var lightPosition = vec4(8.0, 5.0, 5.0, 0.0 );
 var lightAmbient = vec4(0.0, 0.0, 0.0, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -8859,7 +8860,15 @@ function getKey(key) {
         angleZ -= 10;
     } else if (key.key == "r" || key.key == "R" ){
         resetCow();
-    } 
+    } else if (key.key == "p" || key.key == "P" ){
+        if (isRotating){
+            rotationSpeed = 0;
+            isRotating = false;
+        } else {
+            rotationSpeed = -0.02;
+            isRotating = true;
+        }
+    }
 }
 
 function drawWireframe (vertices, color){

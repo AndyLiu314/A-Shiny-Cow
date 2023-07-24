@@ -8873,19 +8873,6 @@ function resetCow(){
     angleZ = 0;
 }
 
-function updateLightPosition() {
-    // Calculate the new x and z coordinates for the light
-    var lightX = lightRadius * Math.cos(angle);
-    var lightZ = lightRadius * Math.sin(angle);
-  
-    // Update the light's position vector
-    lightPosition[0] = lightX;
-    lightPosition[2] = lightZ;
-  
-    // Update the angle for the next frame
-    angle += rotationSpeed;
-}
-
 function transformCow(){
     const model = [
         0.0, 0.0, 0.0, 0.0,
@@ -8927,6 +8914,19 @@ function viewMatrix() {
     return lookAt(eye, target, up);
 }
 
+function updateLightPosition() {
+    // Calculate the new x and z coordinates for the light
+    var lightX = lightRadius * Math.cos(angle);
+    var lightZ = lightRadius * Math.sin(angle);
+  
+    // Update the light's position vector
+    lightPosition[0] = lightX;
+    lightPosition[2] = lightZ;
+  
+    // Update the angle for the next frame
+    angle += rotationSpeed;
+}
+
 function setLightUniforms(){
     var ambientProduct = mult(lightAmbient, materialAmbient);
     var diffuseProduct = mult(lightDiffuse, materialDiffuse);
@@ -8936,6 +8936,9 @@ function setLightUniforms(){
     gl.uniform4fv( gl.getUniformLocation(program, "diffuseProduct"),flatten(diffuseProduct) );
     gl.uniform4fv( gl.getUniformLocation(program, "specularProduct"),flatten(specularProduct) );
     gl.uniform1f( gl.getUniformLocation(program, "shininess"), materialShininess );
+
+    updateLightPosition();
+    gl.uniform4fv( gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
 }
 
 window.onload = function init() {
@@ -9001,13 +9004,13 @@ function render (){
     // projection matrix
     var aspect = canvas.width / canvas.height;
     var projection_mat = perspective(55.0, aspect, 0.1, 1000.0);
-
     normalMatrix = [
         vec3(view[0][0], view[0][1], view[0][2]),
         vec3(view[1][0], view[1][1], view[1][2]),
         vec3(view[2][0], view[2][1], view[2][2])
     ];
 
+    // Drawing Cow
     gl.bindBuffer(gl.ARRAY_BUFFER, cow_vBuffer);
 
     var vPosition = gl.getAttribLocation(program, "vPosition");
@@ -9024,9 +9027,6 @@ function render (){
     gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
 
     setLightUniforms();
-    updateLightPosition();
-    gl.uniform4fv( gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
-
     gl.drawArrays(gl.TRIANGLES, 0, cow.length);
 
     // Drawing Cube
@@ -9037,7 +9037,8 @@ function render (){
     gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vNormal);
 
-    var cube_transform = translate(lightPosition[0], 5, lightPosition[2]);
+    var cube_transform = mult(translate(lightPosition[0], 5, lightPosition[2]), transform_mat); // this attaches cube to cow
+    //var cube_transform = translate(lightPosition[0], 5, lightPosition[2]) // cube is detached
     gl.uniformMatrix4fv(transform, false, flatten(cube_transform));
     gl.uniformMatrix4fv(modelView, false, flatten(view));
     gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );

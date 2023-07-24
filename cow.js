@@ -8763,9 +8763,9 @@ var trans_z = 0;
 var pos_x = 0; 
 var pos_y = 0; 
 
-const rotationSpeedConstant = 10;
-var lightX = 0;
-var lightZ = 0;
+var angle = 0;
+var lightRadius = 15.0;
+const rotationSpeed = -0.02;
 var lightPosition = vec4(8.0, 5.0, 5.0, 0.0 );
 var lightAmbient = vec4(0.0, 0.0, 0.0, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -8774,7 +8774,7 @@ var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
 var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
 var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
-var materialShininess = 20.0;
+var materialShininess = 80.0;
 
 //var stop_light_rotating = false;
 //var stop_light_panning = false;
@@ -8862,22 +8862,6 @@ function getKey(key) {
     } 
 }
 
-// helper function 
-function setUniform3f(program, name, x, y, z) {
-    const position = gl.getUniformLocation(program, name);
-    gl.uniform3f(position, x, y, z);
-}
-
-function resetCow(){
-    trans_x = 0;
-    trans_y = 0;
-    trans_z = 0;
-
-    angleX = 0;
-    angleY = 0;
-    angleZ = 0;
-}
-
 function drawWireframe (vertices, color){
     let wBuffer = gl.createBuffer();
     if (!wBuffer) {
@@ -8900,6 +8884,70 @@ function drawWireframe (vertices, color){
 	gl.uniform4fv(colorLoc, color);
 
     gl.drawArrays(gl.LINES, 0, vertices.length);
+}
+
+function resetCow(){
+    trans_x = 0;
+    trans_y = 0;
+    trans_z = 0;
+
+    angleX = 0;
+    angleY = 0;
+    angleZ = 0;
+}
+
+function updateLightPosition() {
+    // Calculate the new x and z coordinates for the light
+    var lightX = lightRadius * Math.cos(angle);
+    var lightZ = lightRadius * Math.sin(angle);
+  
+    // Update the light's position vector
+    lightPosition[0] = lightX;
+    lightPosition[2] = lightZ;
+  
+    // Update the angle for the next frame
+    angle += rotationSpeed;
+}
+
+function transformCow(){
+    const model = [
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+    ];
+
+    // scale matrix
+    var scale_mat = model;
+    scale_mat = scalem(scale_val, scale_val, scale_val);
+
+    // creates rotation matrix
+    // var angleXYZ rotates the matrix
+    // rotation depends on axis which is the second parameter (the array)
+    let rotateX = rotate(angleX, [1.0, 0.0, 0.0]);
+    let rotateY = rotate(angleY, [0.0, 1.0, 0.0]);
+    let rotateZ = rotate(angleZ, [0.0, 0.0, 1.0]);
+    var rotate_mat = mult(rotateZ, mult(rotateY, rotateX)); 
+
+    // creates translation matrix
+    // moves cow x y z 
+    var translate_mat = translate(trans_x, trans_y, trans_z); 
+
+    // final transformation matrix 
+    return mult(translate_mat, mult(scale_mat, rotate_mat));
+}
+
+function viewMatrix() {
+    // this orients camera
+    // eye is camera location
+    // target is reference position (basically cow position)
+    // up is direction of up
+    eye = vec3(0, 0, 30);
+    target = vec3(0, 0, 0);
+    up = vec3(0, 1, 0);
+
+    // create view matrix
+    return lookAt(eye, target, up);
 }
 
 window.onload = function init() {
@@ -8972,45 +9020,15 @@ window.onload = function init() {
 function render (){
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    const model = [
-        0.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    ];
-
-    // scale matrix
-    var scale_mat = model;
-    scale_mat = scalem(scale_val, scale_val, scale_val);
-
-    // creates rotation matrix
-    // var angleXYZ rotates the matrix
-    // rotation depends on axis which is the second parameter (the array)
-    let rotateX = rotate(angleX, [1.0, 0.0, 0.0]);
-    let rotateY = rotate(angleY, [0.0, 1.0, 0.0]);
-    let rotateZ = rotate(angleZ, [0.0, 0.0, 1.0]);
-    var rotate_mat = mult(rotateZ, mult(rotateY, rotateX)); 
-
-    // creates translation matrix
-    // moves cow x y z 
-    var translate_mat = translate(trans_x, trans_y, trans_z); 
-
     // final transformation matrix 
-    var transform_mat = mult(translate_mat, mult(scale_mat, rotate_mat));
-
-    // this orients camera
-    // eye is camera location
-    // target is reference position (basically cow position)
-    // up is direction of up
-    eye = vec3(0, 0, 30);
-    target = vec3(0, 0, 0);
-    up = vec3(0, 1, 0);
+    var transform_mat = transformCow();
 
     // create view matrix
-    var view = lookAt(eye, target, up);
+    var view = viewMatrix();
 
     // perspective(fovy, aspect, near, far)
     // fovy is prob fov 
+    // projection matrix
     var aspect = canvas.width / canvas.height;
     var projection_mat = perspective(55.0, aspect, 0.1, 1000.0);
 
@@ -9025,13 +9043,8 @@ function render (){
     gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );
     gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
 
-    /*let angle = 0;
-    angle += 0.1;
-    lightX = Math.cos((Math.PI * rotationSpeedConstant) / 180.0);
-    lightZ = Math.cos((Math.PI * rotationSpeedConstant) / 180.0);
-    var translate_light = translate(lightX, 0.0, lightZ);
-    var transform_light = mult(lightPosition, translate_light); */ 
-    gl.uniform4fv( gl.getUniformLocation(program, "lightPosition"),flatten(lightPosition) );
+    updateLightPosition();
+    gl.uniform4fv( gl.getUniformLocation(program, "lightPosition"), flatten(lightPosition));
 
     gl.drawArrays(gl.TRIANGLES, 0, cow.length);
     //drawWireframe(cube, vec4(1,1,1,1));

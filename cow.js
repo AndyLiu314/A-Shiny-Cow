@@ -8740,6 +8740,28 @@ function get_cube_faces() {
     ]
 }
 
+function get_normals() {
+    //var normals = [];
+    //for (var i = 0; i < vertices.length;)
+
+    for (var i = 0; i < cow.length-2; i++){
+        var u = subtract(cow[i+1], cow[i]);
+        var v = subtract(cow[i+2], cow[i]);
+
+        temp.push(cross(u,v)); 
+
+        if(temp.length == 3){
+            var sum = add(add(temp[0], temp[1]), temp[2]); 
+            var avg = [sum[0]/3, sum[1]/3, sum[2]/3];
+            normals.push(avg);
+            normals.push(avg);
+            normals.push(avg);
+
+            temp = [];
+        }
+    }
+}
+
 var gl;
 var canvas;
 var program;
@@ -8747,11 +8769,12 @@ var program;
 var vertices = [];
 var indices = [];
 var cow = [];
+var normals = [];
+var temp = [];
 
 var cube_vertices = [];
 var cube_indices = [];
 var cube = [];
-//var normalsArray = [];
 
 var angleX = 0;
 var angleY = 0;
@@ -8936,20 +8959,6 @@ function updateLightPosition() {
     angle += rotationSpeed;
 }
 
-function updateSpotlightPosition() {
-    if (panning) {
-      // Update the light's position based on the current angle
-      lightPosition[0] = 6.0 * Math.sin(currentAngle);
-      lightPosition[2] = 6.0 * Math.cos(currentAngle);
-      
-      // Update the light's direction as well (pointing towards the origin)
-      lightDirection = vec3(-lightPosition[0], -lightPosition[1], -lightPosition[2]);
-      
-      // Update the angle for the next frame
-      currentAngle += rotationSpeed;
-    }
-  }
-
 function setLightUniforms(){
     var ambientProduct = mult(lightAmbient, materialAmbient);
     var diffuseProduct = mult(lightDiffuse, materialDiffuse);
@@ -9003,11 +9012,14 @@ window.onload = function init() {
     gl.bindBuffer(gl.ARRAY_BUFFER, cow_vBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(cow), gl.STATIC_DRAW);
 
-    /* MIGHT NEED 2 BUFFERS BUT NOT SURE, WILL USE 1 FOR NOW
-       ALSO DONT KNOW DIFFERENCE BETWEEN NORMALS ARRAY AND VERTICES ARRAY (COW) 
     var nBuffer = gl.createBuffer();
+    get_normals();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW ); */ 
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW ); 
+
+    var vNormal = gl.getAttribLocation( program, "vNormal" );
+    gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vNormal);
 
     modelView = gl.getUniformLocation( program, "modelView" );
     projection = gl.getUniformLocation( program, "projection" );
@@ -9027,11 +9039,14 @@ function render (){
     // projection matrix
     var aspect = canvas.width / canvas.height;
     var projection_mat = perspective(55.0, aspect, 0.1, 1000.0);
-    normalMatrix = [
-        vec3(view[0][0], view[0][1], view[0][2]),
-        vec3(view[1][0], view[1][1], view[1][2]),
-        vec3(view[2][0], view[2][1], view[2][2])
+
+    /* THIS CAUSES LIGHT TO IMPROPERLY REACT TO COW TRANFORMATIONS
+    normalMatrix = [ 
+        vec3(modelView_mat[0][0], modelView_mat[0][1], modelView_mat[0][2]),
+        vec3(modelView_mat[1][0], modelView_mat[1][1], modelView_mat[1][2]),
+        vec3(modelView_mat[2][0], modelView_mat[2][1], modelView_mat[2][2])
     ];
+    gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );*/
 
     // Drawing Cow
     gl.bindBuffer(gl.ARRAY_BUFFER, cow_vBuffer);
@@ -9040,9 +9055,9 @@ function render (){
     gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
-    var vNormal = gl.getAttribLocation( program, "vNormal" );
-    gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
-    gl.enableVertexAttribArray( vNormal);
+    //var vNormal = gl.getAttribLocation( program, "vNormal" );
+    //gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
+    //gl.enableVertexAttribArray( vNormal);
 
     gl.uniformMatrix4fv(modelView, false, flatten(modelView_mat));
     gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );

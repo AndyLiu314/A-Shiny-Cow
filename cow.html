@@ -13,7 +13,6 @@
 
         uniform mat4 modelView;
         uniform mat4 projection;
-        uniform mat4 transform;
 
         uniform vec4 lightPosition;
         uniform mat3 normalMatrix;
@@ -31,7 +30,7 @@
             E =  -normalize(pos);
             N = normalize( normalMatrix*vNormal.xyz);
 
-            gl_Position = projection * modelView * transform * vec4(vPosition, 1.0);
+            gl_Position = projection * modelView * vec4(vPosition, 1.0);
         }
     </script>
 

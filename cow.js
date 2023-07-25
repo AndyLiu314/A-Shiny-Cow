@@ -8787,7 +8787,7 @@ var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialShininess = 100.0;
 
 var cow_vBuffer, cube_vBuffer;
-var modelView, projection, transform;
+var modelView, projection; 
 var normalMatrix, normalMatrixLoc;
 var eye, target, up;
 
@@ -9011,7 +9011,6 @@ window.onload = function init() {
 
     modelView = gl.getUniformLocation( program, "modelView" );
     projection = gl.getUniformLocation( program, "projection" );
-    transform = gl.getUniformLocation(program, "transform");
     normalMatrixLoc = gl.getUniformLocation( program, "normalMatrix" );
 
     render();
@@ -9024,6 +9023,7 @@ function render (){
     var transform_mat = transformCow();
     // create view matrix
     var view = viewMatrix();
+    var modelView_mat = mult(view, transform_mat);
     // projection matrix
     var aspect = canvas.width / canvas.height;
     var projection_mat = perspective(55.0, aspect, 0.1, 1000.0);
@@ -9044,8 +9044,7 @@ function render (){
     gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vNormal);
 
-    gl.uniformMatrix4fv(transform, false, flatten(transform_mat));
-    gl.uniformMatrix4fv(modelView, false, flatten(view));
+    gl.uniformMatrix4fv(modelView, false, flatten(modelView_mat));
     gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );
     gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
 
@@ -9059,8 +9058,9 @@ function render (){
     gl.enableVertexAttribArray(vPosition);
 
     var cube_transform = mult(translate(lightPosition[0], 5, lightPosition[2]), transform_mat); // this attaches cube to cow
+    cube_transform = mult(view, cube_transform);
     //var cube_transform = translate(lightPosition[0], 5, lightPosition[2]) // cube is detached
-    gl.uniformMatrix4fv(transform, false, flatten(cube_transform));
+    gl.uniformMatrix4fv(modelView, false, flatten(cube_transform));
 
     gl.uniform4fv( gl.getUniformLocation(program, "ambientProduct"), mat4());
     gl.uniform4fv( gl.getUniformLocation(program, "diffuseProduct"), mat4());

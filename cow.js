@@ -8764,7 +8764,7 @@ var pos_x = 0;
 var pos_y = 0; 
 
 var angle = 0;
-var lightRadius = 10.0;
+var lightRadius = 15.0;
 var rotationSpeed = -0.01;
 var isRotating = true;
 var lightPosition = vec4(8.0, 5.0, 5.0, 0.0 );
@@ -8784,7 +8784,7 @@ var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
 var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
 var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
-var materialShininess = 200.0;
+var materialShininess = 100.0;
 
 var cow_vBuffer, cube_vBuffer;
 var modelView, projection, transform;
@@ -9057,15 +9057,10 @@ function render (){
 
     gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
-    //gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
-    //gl.enableVertexAttribArray( vNormal);
 
     var cube_transform = mult(translate(lightPosition[0], 5, lightPosition[2]), transform_mat); // this attaches cube to cow
     //var cube_transform = translate(lightPosition[0], 5, lightPosition[2]) // cube is detached
     gl.uniformMatrix4fv(transform, false, flatten(cube_transform));
-    //gl.uniformMatrix4fv(modelView, false, flatten(view));
-    //gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );
-    //gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );
 
     gl.uniform4fv( gl.getUniformLocation(program, "ambientProduct"), mat4());
     gl.uniform4fv( gl.getUniformLocation(program, "diffuseProduct"), mat4());

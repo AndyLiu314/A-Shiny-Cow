@@ -8764,7 +8764,7 @@ var pos_x = 0;
 var pos_y = 0; 
 
 var angle = 0;
-var lightRadius = 15.0;
+var lightRadius = 10.0;
 var rotationSpeed = -0.01;
 var isRotating = true;
 var lightPosition = vec4(8.0, 5.0, 5.0, 0.0 );
@@ -8777,14 +8777,14 @@ var isPanning = true; // Turn panning on by default
 var currentAngle = 0.0;
 var spotlightSpeed = 0.02;
 
-var lightAmbient = vec4(0.0, 0.0, 0.0, 1.0 );
+var lightAmbient = vec4(0.3, 0.3, 0.0, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
-var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
-var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0 );
+var materialAmbient = vec4( 0.5, 0.2, 0.0, 1.0 );
+var materialDiffuse = vec4( 0.4, 0.3, 0.0, 1.0 );
 var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
-var materialShininess = 100.0;
+var materialShininess = 30.0;
 
 var cow_vBuffer, cube_vBuffer;
 var modelView, projection, transform;

@@ -20,16 +20,13 @@
 
         void main()
         {
-            vec3 pos = (modelView * vec4(vPosition, 1.0)).xyz;
+            vec3 pos = -((modelView * vec4(vPosition, 1.0)).xyz);
+            vec3 light = lightPosition.xyz;
 
-            if (lightPosition.w == 0.0) {
-                L = normalize(lightPosition.xyz);
-            } else {
-                L = normalize( lightPosition.xyz - pos );
-            } 
+            L = normalize(light - pos);
 
-            E =  -normalize(pos);
-            N = normalize( normalMatrix*vNormal.xyz);
+            E =  -pos;
+            N = normalize( (modelView*transform*vec4(vNormal, 0.0)).xyz);
 
             gl_Position = projection * modelView * transform * vec4(vPosition, 1.0);
         }

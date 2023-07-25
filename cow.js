@@ -8784,10 +8784,10 @@ var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialAmbient = vec4( 0.5, 0.2, 0.0, 1.0 );
 var materialDiffuse = vec4( 0.4, 0.3, 0.0, 1.0 );
 var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
-var materialShininess = 100.0;
+var materialShininess = 50.0;
 
 var cow_vBuffer, cube_vBuffer;
-var modelView, projection; 
+var modelView, projection;
 var normalMatrix, normalMatrixLoc;
 var eye, target, up;
 

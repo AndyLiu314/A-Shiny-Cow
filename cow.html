@@ -28,7 +28,7 @@
             } 
 
             E =  -normalize(pos);
-            N = normalize( normalMatrix*vNormal.xyz);
+            N = normalize((modelView * vec4(vNormal, 0.0)).xyz);
 
             gl_Position = projection * modelView * vec4(vPosition, 1.0);
         }

@@ -8744,6 +8744,7 @@ function get_cube_faces() {
 // does not consider vertices that are used in multiple triangles
 // flat shading
 function get_flat_normals() { 
+    var temp = [];
     for (var j = 0; j < cow.length; j++){
         temp[j] = vec3(0,0,0);
     }
@@ -8833,12 +8834,12 @@ var isPanning = true; // Turn panning on by default
 var currentAngle = 0.0;
 var spotlightSpeed = 0.02;
 
-var lightAmbient = vec4(0.3, 0.3, 0.0, 1.0 );
-var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+var lightAmbient = vec4(0.5, 0.4, 0.3, 1.0 );
+var lightDiffuse = vec4( 0.6, 0.5, 0.4, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
-var materialAmbient = vec4( 0.5, 0.2, 0.0, 1.0 );
-var materialDiffuse = vec4( 0.4, 0.3, 0.0, 1.0 );
+var materialAmbient = vec4( 0.5, 0.4, 0.3, 1.0 );
+var materialDiffuse = vec4( 0.5, 0.4, 0.3, 1.0 );
 var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialShininess = 50.0;
 
@@ -9046,6 +9047,7 @@ window.onload = function init() {
 
     var nBuffer = gl.createBuffer();
     get_smooth_normals();
+    //get_flat_normals(); // for flat shading
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW ); 
 

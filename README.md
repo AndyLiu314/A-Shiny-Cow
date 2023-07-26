@@ -16,12 +16,9 @@ instructions said that the point light rotates "above the cow" so I attached the
 of the cow. 
 
 **Uncompleted Steps:** 
-Unfortunately, due to time constraints, I was not able to perfectly implement Phong reflection or Shading. However, I did 
-my best to implement a Phong lighting model that uses per-fragment lighting. To help with my implementation, I used
-examples from within the textbook and lectures to write and modify code for my vertex and fragment shaders. This is 
-something that I would like to later return to and try to implement as I do find it very interesting. 
+Unfortunately, due to time constraints, I was not able to implement a spotlight for my scene. I wanted to focus more of 
+my attention on the shading and lighting as I found that to be more interesting and useful to learn. 
 
-**Note** 
-I also did not start the spotlight implementation
+
 
 

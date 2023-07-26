@@ -8741,25 +8741,38 @@ function get_cube_faces() {
 }
 
 function get_normals() {
-    //var normals = [];
-    //for (var i = 0; i < vertices.length;)
+    for (var j = 0; j < cow.length; j++){
+        temp[j] = vec3(0,0,0);
+    }
 
-    for (var i = 0; i < cow.length-2; i++){
+    for (var i = 0; i < cow.length-2; i+=3){ // goes through each triangle of the cow
+
         var u = subtract(cow[i+1], cow[i]);
         var v = subtract(cow[i+2], cow[i]);
 
-        temp.push(cross(u,v)); 
+        temp[i] = add(temp[i], normalize(cross(u,v)));
+        temp[i+1] = add(temp[i+1], normalize(cross(u,v)));
+        temp[i+2] = add(temp[i+2], normalize(cross(u,v)));
 
-        if(temp.length == 3){
-            var sum = add(add(temp[0], temp[1]), temp[2]); 
-            var avg = [sum[0]/3, sum[1]/3, sum[2]/3];
-            normals.push(avg);
-            normals.push(avg);
-            normals.push(avg);
+        //temp.push(normalize(cross(u,v))); // face normal for a single triangle
+        //temp.push(normalize(cross(u,v)));
+        //temp.push(normalize(cross(u,v))); // 3 pushes to store the face normal of a single triangle into each of its vertices
 
-            temp = [];
-        }
+        /*for (var j = i; j < i+3; j++) {
+            var length = Math.sqrt(temp[j][0]*temp[j][0] + temp[j][1]*temp[j][1] + temp[j][2]*temp[j][2]);
+            if (length != 0) {
+                temp[j] = [temp[j][0]/length, temp[j][1]/length, temp[j][2]/length]; 
+            } else {
+                temp[j] = [0,0,0]; 
+            }
+        } */ 
+        normals.push(temp[i]);
+        normals.push(temp[i+1]);
+        normals.push(temp[i+2]);
     }
+
+    //normalize(normals);
+    console.log(vertices.length);
 }
 
 var gl;

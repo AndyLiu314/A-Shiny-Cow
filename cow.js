@@ -8740,39 +8740,60 @@ function get_cube_faces() {
     ]
 }
 
-function get_normals() {
+// stores individual vertex normals for each vertex
+// does not consider vertices that are used in multiple triangles
+// flat shading
+function get_flat_normals() { 
     for (var j = 0; j < cow.length; j++){
         temp[j] = vec3(0,0,0);
     }
 
     for (var i = 0; i < cow.length-2; i+=3){ // goes through each triangle of the cow
-
         var u = subtract(cow[i+1], cow[i]);
         var v = subtract(cow[i+2], cow[i]);
+        var faceNormal = cross(u,v); // finds face normal of each triangle
 
-        temp[i] = add(temp[i], normalize(cross(u,v)));
-        temp[i+1] = add(temp[i+1], normalize(cross(u,v)));
-        temp[i+2] = add(temp[i+2], normalize(cross(u,v)));
+        temp[i] = add(temp[i], normalize(faceNormal));
+        temp[i+1] = add(temp[i+1], normalize(faceNormal));
+        temp[i+2] = add(temp[i+2], normalize(faceNormal));
 
-        //temp.push(normalize(cross(u,v))); // face normal for a single triangle
-        //temp.push(normalize(cross(u,v)));
-        //temp.push(normalize(cross(u,v))); // 3 pushes to store the face normal of a single triangle into each of its vertices
-
-        /*for (var j = i; j < i+3; j++) {
-            var length = Math.sqrt(temp[j][0]*temp[j][0] + temp[j][1]*temp[j][1] + temp[j][2]*temp[j][2]);
-            if (length != 0) {
-                temp[j] = [temp[j][0]/length, temp[j][1]/length, temp[j][2]/length]; 
-            } else {
-                temp[j] = [0,0,0]; 
-            }
-        } */ 
         normals.push(temp[i]);
         normals.push(temp[i+1]);
         normals.push(temp[i+2]);
+    } 
+}
+
+// stores weighted sums of vertex normals for each vertex
+// essentially averages these weighted sums to apply a smoothing effect
+// smooth phong shading
+function get_smooth_normals() {
+    var vertices_temp = get_vertices();
+    var indices_temp = get_faces();
+    var temp = [];
+
+    for (var j = 0; j < vertices_temp.length; j++){
+        temp[j] = vec3(0,0,0);
     }
 
-    //normalize(normals);
-    console.log(vertices.length);
+    for (var i = 0; i < indices_temp.length; i++){ // goes through each triangle of the cow
+        var u = subtract(vertices_temp[indices_temp[i][1] - 1], vertices_temp[indices_temp[i][0] - 1]);
+        var v = subtract(vertices_temp[indices_temp[i][2] - 1], vertices_temp[indices_temp[i][0] - 1]);
+        var faceNormal = cross(u,v); // finds face normal of each triangle
+
+        temp[indices_temp[i][0]- 1] = add(temp[indices_temp[i][0]- 1], faceNormal); // adds face normal to each vertex of the triangle
+        temp[indices_temp[i][1]- 1] = add(temp[indices_temp[i][1]- 1], faceNormal); // will continue to add face normals to vertices used in multiple triangles
+        temp[indices_temp[i][2]- 1] = add(temp[indices_temp[i][2]- 1], faceNormal); // this acts as a way to find the weighted sums of vertex normals for each vertex
+    }
+
+    for (var k = 0; k < temp.length; k++){
+        temp[k] = normalize(temp[k]); // normalize the vertex normal sums of each vertex 
+    }
+
+    for (var m = 0; m < indices_temp.length; m++){
+        for (var n = 0; n < 3; n++) {
+            normals.push(temp[indices_temp[m][n] - 1]) // adds smooth shading normals to the normals array
+        }
+    }
 }
 
 var gl;
@@ -8783,7 +8804,6 @@ var vertices = [];
 var indices = [];
 var cow = [];
 var normals = [];
-var temp = [];
 
 var cube_vertices = [];
 var cube_indices = [];
@@ -8842,8 +8862,6 @@ function setEventListeners(canvas) {
             leftDrag = true;
             startX = event.clientX;
             startY = event.clientY;
-            // console.log(startX);
-            // console.log(startY);
         } else if (event.button == 2 && leftDrag == false){ // right click
             rightDrag = true;
             startX = event.clientX;
@@ -8852,8 +8870,7 @@ function setEventListeners(canvas) {
     });
       
     canvas.addEventListener('mousemove', function (event) {
-        if (leftDrag) {
-            // get mouse position with respect to canvas 
+        if (leftDrag) { // get mouse position with respect to canvas and translate
             let currentX = event.clientX;
             let currentY = event.clientY;
             pos_x = (2 * currentX) / canvas.width - 1;
@@ -8882,7 +8899,7 @@ function setEventListeners(canvas) {
 
 window.addEventListener("keydown", getKey, false);
 function getKey(key) {
-	if (key.key == "ArrowUp"){
+	if (key.key == "ArrowUp"){ 
         if (trans_z < 25) {
             trans_z += 2;
         }
@@ -8890,7 +8907,6 @@ function getKey(key) {
         if (trans_z > -50){
             trans_z -= 2.5;
         } 
-        // console.log(trans_z);
 	} else if (key.key == "ArrowLeft"){
         angleZ += 10; 
     } else if (key.key == "ArrowRight"){
@@ -8918,6 +8934,7 @@ function resetCow(){
     angleZ = 0;
 }
 
+// creates transformation matrix for cow
 function transformCow(){
     const model = [
         0.0, 0.0, 0.0, 0.0,
@@ -8946,8 +8963,8 @@ function transformCow(){
     return mult(translate_mat, mult(scale_mat, rotate_mat));
 }
 
+// view matrix function to orient camera
 function viewMatrix() {
-    // this orients camera
     // eye is camera location
     // target is reference position (basically cow position)
     // up is direction of up
@@ -8959,19 +8976,21 @@ function viewMatrix() {
     return lookAt(eye, target, up);
 }
 
+// rotates point light
 function updateLightPosition() {
-    // Calculate the new x and z coordinates for the light
+    // calculate new x and z coordinates for the light
     var lightX = lightRadius * Math.cos(angle);
     var lightZ = lightRadius * Math.sin(angle);
   
-    // Update the light's position vector
+    // update light's position vector
     lightPosition[0] = lightX;
     lightPosition[2] = lightZ;
   
-    // Update the angle for the next frame
+    // update angle for the next frame
     angle += rotationSpeed;
 }
 
+// self-explanatory
 function setLightUniforms(){
     var ambientProduct = mult(lightAmbient, materialAmbient);
     var diffuseProduct = mult(lightDiffuse, materialDiffuse);
@@ -9026,7 +9045,7 @@ window.onload = function init() {
     gl.bufferData(gl.ARRAY_BUFFER, flatten(cow), gl.STATIC_DRAW);
 
     var nBuffer = gl.createBuffer();
-    get_normals();
+    get_smooth_normals();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW ); 
 
@@ -9053,24 +9072,12 @@ function render (){
     var aspect = canvas.width / canvas.height;
     var projection_mat = perspective(55.0, aspect, 0.1, 1000.0);
 
-    /* THIS CAUSES LIGHT TO IMPROPERLY REACT TO COW TRANFORMATIONS
-    normalMatrix = [ 
-        vec3(modelView_mat[0][0], modelView_mat[0][1], modelView_mat[0][2]),
-        vec3(modelView_mat[1][0], modelView_mat[1][1], modelView_mat[1][2]),
-        vec3(modelView_mat[2][0], modelView_mat[2][1], modelView_mat[2][2])
-    ];
-    gl.uniformMatrix3fv(normalMatrixLoc, false, flatten(normalMatrix) );*/
-
     // Drawing Cow
     gl.bindBuffer(gl.ARRAY_BUFFER, cow_vBuffer);
 
     var vPosition = gl.getAttribLocation(program, "vPosition");
     gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
-
-    //var vNormal = gl.getAttribLocation( program, "vNormal" );
-    //gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
-    //gl.enableVertexAttribArray( vNormal);
 
     gl.uniformMatrix4fv(modelView, false, flatten(modelView_mat));
     gl.uniformMatrix4fv(projection, false, flatten(projection_mat) );
@@ -9087,7 +9094,6 @@ function render (){
 
     var cube_transform = mult(translate(lightPosition[0], 5, lightPosition[2]), transform_mat); // this attaches cube to cow
     cube_transform = mult(view, cube_transform);
-    //var cube_transform = translate(lightPosition[0], 5, lightPosition[2]) // cube is detached
     gl.uniformMatrix4fv(modelView, false, flatten(cube_transform));
 
     gl.uniform4fv( gl.getUniformLocation(program, "ambientProduct"), mat4());

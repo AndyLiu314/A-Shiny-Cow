@@ -15,10 +15,6 @@ were slightly vague, I was not sure if the point light was supposed to follow th
 instructions said that the point light rotates "above the cow" so I attached the light to always be above the position
 of the cow. 
 
-**Uncompleted Steps:** 
-Unfortunately, due to time constraints, I was not able to implement a spotlight for my scene. I wanted to focus more of 
-my attention on the shading and lighting as I found that to be more interesting and useful to learn. 
-
 
 
 

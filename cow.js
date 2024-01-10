@@ -8825,6 +8825,7 @@ var lightRadius = 10.0;
 var rotationSpeed = -0.01;
 var isRotating = true;
 var lightPosition = vec4(8.0, 5.0, 5.0, 0.0 );
+var isSmooth = true;
 
 var angularAttenuation = 1;
 var spotlightPosition = vec4(0.0, 6.0, 6.0, 1.0);
@@ -8921,6 +8922,12 @@ function getKey(key) {
         } else {
             rotationSpeed = -0.01;
             isRotating = true;
+        }
+    } else if (key.key == "s" || key.key == "S" ) {
+        if (isSmooth == true){
+            isSmooth = false;
+        } else {
+            isSmooth = true;
         }
     }
 }
@@ -9046,8 +9053,13 @@ window.onload = function init() {
     gl.bufferData(gl.ARRAY_BUFFER, flatten(cow), gl.STATIC_DRAW);
 
     var nBuffer = gl.createBuffer();
-    get_smooth_normals();
-    //get_flat_normals(); // for flat shading
+
+    if (isSmooth){
+        get_smooth_normals();
+    } else {
+        get_flat_normals(); // for flat shading
+    }
+
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer);
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW ); 
 

@@ -8825,7 +8825,7 @@ var lightRadius = 10.0;
 var rotationSpeed = -0.01;
 var isRotating = true;
 var lightPosition = vec4(8.0, 5.0, 5.0, 0.0 );
-var isSmooth = true;
+var isSmooth = sessionStorage.getItem("isSmooth") === "true" ? true : false;
 
 var angularAttenuation = 1;
 var spotlightPosition = vec4(0.0, 6.0, 6.0, 1.0);
@@ -8897,6 +8897,13 @@ function setEventListeners(canvas) {
             rightDrag = false;
         }
     });
+
+    var button = document.getElementById("shadingButton");
+    button.addEventListener("click", function(){
+        isSmooth = !isSmooth;
+        sessionStorage.setItem("isSmooth",isSmooth); 
+        location.reload();
+    });
 }
 
 window.addEventListener("keydown", getKey, false);
@@ -8922,12 +8929,6 @@ function getKey(key) {
         } else {
             rotationSpeed = -0.01;
             isRotating = true;
-        }
-    } else if (key.key == "s" || key.key == "S" ) {
-        if (isSmooth == true){
-            isSmooth = false;
-        } else {
-            isSmooth = true;
         }
     }
 }

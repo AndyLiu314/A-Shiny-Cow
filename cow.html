@@ -70,11 +70,21 @@
     <script type="text/javascript" src="Common/initShaders.js"></script>
     <script type="text/javascript" src="Common/MV.js"></script>
     <script type="text/javascript" src="cow.js"></script>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body oncontextmenu="return false;">
-    <canvas id="gl-canvas" width="1300" height="1100">Please use a browser that supports Canvass</canvas>
-    <button id="shadingButton">Switch Shading</button>
+    <canvas id="gl-canvas" width="1100" height="900">Please use a browser that supports Canvass</canvas>
+    <div class="ui-box">
+        <p>CONTROLS:</p>
+        <p>Click and drag LEFT mouse button to TRANSLATE cow along X and Y axis</p>
+        <p>Click and drag RIGHT mouse button to ROTATE cow along X and Y axis</p>
+        <p>ARROW KEYS to TRANSLATE and ROTATE along Z axis</p>
+        <p>RESET cow position with r</p>
+        <p>STOP LIGHT ROTATION with p</p>
+        <button id="shadingButton">Switch Shading</button>
+    </div>
+    
 </body>
 
 </html>

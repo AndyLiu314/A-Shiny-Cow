@@ -1,3 +1,7 @@
+/* 
+    Contains vertex coordinates for 3D models
+*/
+
 function get_vertices(){
     return [vec3(2.292449,-0.871852,-0.882400),
             vec3(2.410367,-0.777999,-0.841105),

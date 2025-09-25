@@ -1,4 +1,4 @@
-# SHADING COW
+# Interactive Phong Shader
 ## Made By: Andy Liu
 
 **Instructions To Run:** 
